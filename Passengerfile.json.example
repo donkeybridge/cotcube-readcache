@@ -1,0 +1,7 @@
+{
+  "address": "::1",
+  "port": 8080,
+  "log_file": "passenger/passenger.log",
+  "environment": "development"
+}
+

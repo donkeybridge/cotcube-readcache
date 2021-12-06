@@ -1,0 +1,120 @@
+#!/bin/sh
+
+warn () { echo -e "$1" >&2; }
+
+usage() {
+  cat <<EOD
+Usage: passenger-app <app> <command> [<args>]
+
+Commands:
+   start     Start application <app>
+   reload    Reload application <app>
+   stop      Stop application <app>
+   restart   Restart application <app>
+   status    Run passenger-status with <args>
+   config    Run passenger-config with <args>
+EOD
+}
+
+BIN="/home/pepe/.rvm/gems/ruby-2.7.4/bin"
+
+RACK_ENV=production
+
+config() {
+  exec ${BIN}/passenger-config "$@"
+}
+
+status() {
+  exec ${BIN}/passenger-status "$@"
+}
+
+start() {
+  cd "$APPDIR"
+  exec ${BIN}/passenger start . --daemonize --disable-security-update-check --disable-anonymous-telemetry --instance-registry-dir ${PASSENGER_INSTANCE_REGISTRY_DIR} --engine builtin --pid-file ${PASSENGER_INSTANCE_REGISTRY_DIR}/app.pid --log-file ${APPDIR}/passenger/passenger.log --environment production
+}
+
+reload() {
+  exec /usr/bin/touch ${APPDIR}/shared/tmp/restart.txt
+}
+
+stop() {
+  exec ${BIN}/passenger stop --pid-file ${PASSENGER_INSTANCE_REGISTRY_DIR}/app.pid
+}
+
+restart() {
+  echo "Shutting down application ..."
+  ${BIN}/passenger stop --pid-file ${PASSENGER_INSTANCE_REGISTRY_DIR}/app.pid
+  sleep 5
+  start
+}
+
+APP=$1; shift
+ACTION=$1; shift
+
+# sanity checks
+[ ! "$APP" ] && warn "Please specify the application to use" && exit 1
+
+if [ "$APP" = "--help" ]; then
+  usage && exit 0
+fi
+
+if [ ! -n "$PASSENGER_APPS_ROOT" ]; then
+  PASSENGER_APPS_ROOT="/home/pepe/GEMS"
+fi
+
+if [ ! -d "$PASSENGER_APPS_ROOT" ]; then
+  warn "Passenger applications root not found at $PASSENGER_APPS_ROOT"
+  warn "Check the PASSENGER_APPS_ROOT environment variable"
+  exit 1
+fi
+
+APPDIR="$PASSENGER_APPS_ROOT/$APP"
+if [ ! -d "$APPDIR" ]; then
+  warn "Application $APP not found at $APPDIR"
+  exit 1
+fi
+
+PASSENGER_INSTANCE_REGISTRY_DIR="$APPDIR/passenger"
+if [ ! -d "$PASSENGER_INSTANCE_REGISTRY_DIR" ]; then
+  warn "Passenger instance registry not found at $PASSENGER_INSTANCE_REGISTRY_DIR"
+  exit 1
+fi
+
+# TODO: check env variables
+
+export PATH
+export GEM_HOME
+export GEM_PATH
+export PASSENGER_ROOT
+export PASSENGER_INSTANCE_REGISTRY_DIR
+export RUBY_VERSION_DIR="$APPDIR"
+
+. /home/pepe/.rvm/environments/ruby-2.7.4
+
+
+case "$ACTION" in
+  help)
+    usage && exit 0
+  ;;
+  start)
+    start
+  ;;
+  reload)
+    reload
+  ;;
+  stop)
+    stop
+  ;;
+  restart)
+    restart
+  ;;
+  status)
+    status $@
+  ;;
+  config)
+    config $@
+  ;;
+  *)
+    usage && exit 1
+  ;;
+esac
