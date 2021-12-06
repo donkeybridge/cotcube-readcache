@@ -9,23 +9,26 @@ module Cotcube
         )
           @readcache = readcache
           @timezone  = timezone
+          @datetime  = timezone.now
+          @keys      = readcache.cache.keys
         end
 
         def update
-          @datetime = @timezone.now
+          @keys      = @readcache.cache.keys
+          @datetime  = @timezone.now
+          @until     = @datetime + 20.seconds
         end
 
         def payload
-          # always returns the current keys live (no caching here)
-          @readcache.cache.keys
+          @keys
         end
 
         def valid_until
-          # is always valid
-          @until = @timezone.now + 1.second
+          # give a short validity, for testing purposes
+          @until ||= @datetime + 20.seconds
         end
 
-        def created_at
+        def modified_at
           @datetime
         end
 

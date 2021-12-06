@@ -44,7 +44,7 @@ module Cotcube
       keys:      { name: 'keys',      maxage: 30.minutes, until: :intra, selector: 0 }
     }
 
-    VALIDATE_KLASS = %i[ payload valid_until expired? update created_at ]
+    VALIDATE_KLASS = %i[ payload valid_until expired? update modified_at ]
 
     attr_reader :cache
 
@@ -91,16 +91,14 @@ module Cotcube
         end
       elsif cache[cache_key][:obj].expired?
         cache[cache_key][:monitor].synchronize do
-          if cache[cache_key][:obj].expired?
-            cache[cache_key][:monitor].update
-          end
+          cache[cache_key][:obj].update if cache[cache_key][:obj].expired?
         end
       end
       # TODO: Set http cache-control according to :valid_until
 
       response = { error:         0,
                    warnings:      warnings,
-                   created_at:    cache[cache_key][:obj].created_at,
+                   modified:      cache[cache_key][:obj].modified_at,
                    valid_until:   cache[cache_key][:obj].valid_until,
                    payload:       cache[cache_key][:obj].payload
       }
