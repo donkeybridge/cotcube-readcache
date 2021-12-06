@@ -12,6 +12,7 @@ module Sinatra
       end
 
       app.get '/:entity/:selector' do
+        puts "Got params #{params}"
         $cache.deliver(params['entity'], selector: params['selector']).to_json
       end
 
