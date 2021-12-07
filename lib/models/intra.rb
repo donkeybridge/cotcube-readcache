@@ -37,7 +37,7 @@ module Cotcube
               z
             }.select{|z| z[:high] } rescue []
           else
-            raw   = JSON.parse(Cotcube::Helpers::DataClient.new.get_historical(contract: contract, interval: :min30, duration: '6_H' ), symbolize_names: true)
+            raw   = JSON.parse(Cotcube::Helpers::DataClient.new.get_historical(contract: contract, interval: :min30, duration: 6.hours ), symbolize_names: true)
             puts "ERROR: #{raw}" unless raw[:error].zero?
             base      = pkg[:base]
             new_base  = raw[:base].

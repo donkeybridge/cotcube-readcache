@@ -63,7 +63,7 @@ module Cotcube
 	end
 
 	def valid_until
-          @until ||= readcache.next_eod
+          @until ||= readcache.next_eod(contract)
 	end
 
 	def modified_at
