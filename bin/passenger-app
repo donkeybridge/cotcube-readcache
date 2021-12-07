@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# this script is based on https://gist.github.com/marvwhere/e0e21a84cbf10fee765c93e125c731be
+
 warn () { echo -e "$1" >&2; }
 
 usage() {
