@@ -19,20 +19,15 @@ module Cotcube
 	  @datetime = @timezone.now
           @until = nil
 	  @sym ||= Cotcube::Helpers.get_id_set(symbol: contract[..1])
-	  timediff = if %w[ NYBOT NYMEX ].include? sym[:exchange]
-		5.hours
-		     elsif %w[ DTB ].include? sym[:exchane]
-		       1.hour
-		     else
-		       6.hours
-		     end
-	  continuous = %w[currencies interest indices].include? sym[:type]
-	  ema_period = 50
 
+	  continuous = %w[currencies interest indices].include? sym[:type]
+
+	  ema_period = 50
 	  indicators = {
             ema_high:    Cotcube::Indicators.ema(key: :high,    length: ema_period,  smoothing: 2),
 	    ema_low:     Cotcube::Indicators.ema(key: :low,     length: ema_period,  smoothing: 2)
 	  }
+
 	  base = if continuous
 	    Cotcube::Bardata.continuous(symbol: contract[..1], indicators: indicators)[-300..].
 	      map{ |z|

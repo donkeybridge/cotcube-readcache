@@ -4,8 +4,8 @@ module Cotcube
       class ISTENCIL
 
         def self.set_selected(selector)
-          sel = selector.to_s.upcase.to_sym
-          return :full     if selector.downcase.to_sym == :aa
+          sel = selector.to_s.upcase[..1].to_sym rescue 'ZZ'
+          return :full     if sel == :AA
           return :grains   if %i[ KE RS ZW ZS ZM ZL ZC ].include? sel
           return :meats    if %i[ HE LE GF             ].include? sel
           return :energies if %i[ HO RB NG CL          ].include? sel
