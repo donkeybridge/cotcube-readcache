@@ -16,7 +16,7 @@ Commands:
 EOD
 }
 
-BIN="/home/pepe/.rvm/gems/ruby-2.7.4/bin"
+BIN="/home/pepe/.rvm/gems/default/bin"
 
 RACK_ENV=production
 
@@ -89,7 +89,7 @@ export PASSENGER_ROOT
 export PASSENGER_INSTANCE_REGISTRY_DIR
 export RUBY_VERSION_DIR="$APPDIR"
 
-. /home/pepe/.rvm/environments/ruby-2.7.4
+. /home/pepe/.rvm/environments/default
 
 
 case "$ACTION" in
