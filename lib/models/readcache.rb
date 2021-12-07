@@ -1,7 +1,3 @@
-# require 'active_support/core_ext/time'
-# require 'active_support/core_ext/numeric'
-
-
 module Cotcube
   class ReadCache
 
@@ -24,7 +20,7 @@ module Cotcube
       stencil:   { name: 'stencil',   maxage: 1.day,      until: :eod,   selector: 0 },
 
       # for (basically) each contract, daily holds daily bars
-      daily:     { name: 'daily',     maxage: 1.day,      until: :eod,   selector: 5 },
+      daily:     { name: 'daily',     maxage: 1.day,      until: :eod,   selector: 5, init: lambda{|z| { contract: z } } },
 
       # for (basically) each contract, these are swaps found on eod run based on daily bars
       swaps:     { name: 'swaps',     maxage: 1.day,      until: :eod,   selector: 5 },
@@ -51,8 +47,9 @@ module Cotcube
     def initialize
       @cache= {}
       @monitor=Monitor.new
-      deliver :stencil
       deliver :symbols
+      deliver :istencil, selector: :AA
+      deliver :stencil
     end
 
     def deliver(entity, selector: nil)
@@ -63,7 +60,11 @@ module Cotcube
       entity = entity.to_s.downcase.to_sym
 
       return { error: 1, msg: "ArgumentError: unknown entity, must be in #{VALID_ENTITIES.keys}" }  unless VALID_ENTITIES.keys.include? entity
-      return { error: 1, msg: "ArgumentError: '#{entity}' MUST not contain a 'selector'." } if VALID_ENTITIES[entity][:selector].zero? and selector
+      
+      if VALID_ENTITIES[entity][:selector].zero? and selector
+        warnings << "ArgumentError: '#{entity}' MUST not contain a 'selector' (got '#{selector}'. Ignoring selector."
+        selector = nil
+      end
 
       if VALID_ENTITIES[entity][:selector].positive? and VALID_ENTITIES[entity][:selector] != (selector.length rescue 0)
         return { error: 1, msg: "ArgumentError: Wrong or missing selector '#{selector}' for '#{entity}', should be of length"\
@@ -103,6 +104,9 @@ module Cotcube
                    payload:       cache[cache_key][:obj].payload
       }
     end
+
+    def next_eod; cache['istencil_full'][:obj].next_eod; end
+    def next_eow; cache[ 'stencil'     ][:obj].next_eow; end
 
     private
 
