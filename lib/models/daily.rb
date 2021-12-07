@@ -16,32 +16,34 @@ module Cotcube
 	end
 
 	def update
-	  @datetime = @timezone.now
+	  @datetime = timezone.now
           @until = nil
 	  @sym ||= Cotcube::Helpers.get_id_set(symbol: contract[..1])
 
 	  continuous = %w[currencies interest indices].include? sym[:type]
 
-	  ema_period = 50
 	  indicators = {
-            ema_high:    Cotcube::Indicators.ema(key: :high,    length: ema_period,  smoothing: 2),
-	    ema_low:     Cotcube::Indicators.ema(key: :low,     length: ema_period,  smoothing: 2)
+            dist:          Cotcube::Indicators.calc(a:  :high,  b: :low, finalize: :to_i) {|high, low| (high - low) / sym[:ticksize] },
+            ema50_high:    Cotcube::Indicators.ema(key: :high,  length:  50,  smoothing: 2),
+	    ema50_low:     Cotcube::Indicators.ema(key: :low,   length:  50,  smoothing: 2),
+            ema200_close:  Cotcube::Indicators.ema(key: :low,   length: 200,  smoothing: 2),
+            ema250_close:  Cotcube::Indicators.ema(key: :low,   length: 250,  smoothing: 2)
 	  }
 
 	  base = if continuous
 	    Cotcube::Bardata.continuous(symbol: contract[..1], indicators: indicators)[-300..].
 	      map{ |z|
-	      z[:datetime] = DateTime.parse(z[:date])
-	      z.delete(:contracts)
-	      z
-	    }
+	        z[:datetime] = timezone.parse(z[:date])
+	        z.delete(:contracts)
+	        z
+	      }
 		 else
 		   Cotcube::Bardata.provide_daily(contract: contract, indicators: indicators)[-300..]
 		 end
 
 	  base.select!{|z| z[:high]}
-	  scaleBreaks = []
 
+	  scaleBreaks = []
 	  brb = readcache.deliver(:stencil)[:payload] 
 	  brb.each_with_index.map{|z,i|
 	    next if i.zero?
@@ -50,9 +52,9 @@ module Cotcube
                brb[i-1][:datetime] < base.last[:datetime]
 
               scaleBreaks << { startValue: brb[i-1][:datetime] + 0.5 * interval, endValue: brb[i][:datetime] - 0.5 * interval }
-
 	    end
 	  } unless base.empty?
+
           @pkg = { base: base, breaks: scaleBreaks }
 	end
 
@@ -69,11 +71,11 @@ module Cotcube
 	end
 
 	def expired?
-	  valid_until < @timezone.now
+	  valid_until < timezone.now
 	end
 
         private 
-        attr_accessor :sym, :contract, :pkg, :interval, :readcache
+        attr_accessor :sym, :contract, :pkg, :interval, :readcache, :timezone
 
       end
     end
