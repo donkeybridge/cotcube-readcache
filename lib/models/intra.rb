@@ -26,14 +26,14 @@ module Cotcube
                      else
                        'America/Chicago'
                      end
-          brb   = readcache.deliver(:istencil, selector: contract[..1])[:payload]
+
           if pkg.nil?
-            raw   = JSON.parse(Cotcube::Helpers::DataClient.new.get_historical(contract: contract, interval: :min30, duration: '3_W' ), symbolize_names: true)
+            raw   = JSON.parse(Cotcube::Helpers::DataClient.new.get_historical(contract: contract, interval: :min30, duration: '30_D' ), symbolize_names: true)
             puts "ERROR: #{raw}" unless raw[:error].zero?
             base  = raw[:base].
               map{ |z|
-             z[:datetime] = DateTime.parse(z[:time])
-               %i[time created_at wap trades].each{|k| z.delete(k)}
+                z[:datetime] = timezone.parse(z[:time])
+                %i[time created_at wap trades].each{|k| z.delete(k)}
               z
             }.select{|z| z[:high] } rescue []
           else
@@ -50,9 +50,10 @@ module Cotcube
           end
 
           scaleBreaks = []
+          brb   = readcache.deliver(:istencil, selector: contract[..1])[:payload]
           brb.each_with_index.map{|z,i|
             next if i.zero?
-            if brb[i][:datetime] - brb[i-1][:datetime] > (1) and brb[i][:datetime] > base.first[:datetime] and brb[i-1][:datetime] < base.last[:datetime]
+            if (brb[i][:datetime] - brb[i-1][:datetime]) * 24.hours > interval and brb[i][:datetime] > base.first[:datetime] and brb[i-1][:datetime] < base.last[:datetime]
               scaleBreaks << { startValue: brb[i-1][:datetime] + 0.5 * interval, endValue: brb[i][:datetime] - 0.5 * interval }
             end
           } unless base.empty?
@@ -77,7 +78,7 @@ module Cotcube
         end
 
         private 
-        attr_accessor :sym, :contract, :pkg, :interval, :readcache
+        attr_reader :sym, :contract, :pkg, :interval, :readcache, :timezone
 
       end
     end
