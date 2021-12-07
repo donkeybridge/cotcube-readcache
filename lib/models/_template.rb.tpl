@@ -15,7 +15,7 @@ module Cotcube
         end
 
         def update
-          @datetime = @timezone.now
+          @datetime = timezone.now
           # < update >
         end
 
@@ -28,12 +28,16 @@ module Cotcube
         end
 
         def modified_at
-          @datetime
+          datetime
         end
 
         def expired?
-          valid_until < @timezone.now
+          valid_until < timezone.now
         end
+
+        private
+        attr_reader :datetime, :timezone, :readcache
+
 
       end
     end
