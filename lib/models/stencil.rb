@@ -7,53 +7,43 @@ module Cotcube
           readcache,
           interval:  :daily,
           swap_type: :full,
-          date:      nil,
           timezone:  Cotcube::Helpers::CHICAGO
         )
           @timezone  = timezone
           @interval  = interval
-          @date      = date
           @swap_type = swap_type
           @readcache = readcache
-          @stencil   = Cotcube::Level::EOD_Stencil.new(swap_type: swap_type, date: @date, timezone: @timezone, interval: @interval)
+          update
         end
 
         def update
-          @datetime = @timezone.now
-          @until    = @readcache.next_eod
-          @next_eow = nil
-          @stencil = Cotcube::Level::EOD_Stencil.new(swap_type: swap_type, date: @date, timezone: @timezone, interval: @interval)
+          @datetime = timezone.now
+          @until    = nil
+          @stencil = Cotcube::Level::EOD_Stencil.new(swap_type: swap_type, timezone: timezone, interval: interval)
         end
 
         def payload
-          @stencil.base.select{|z| z[:x] > -6 }
+          stencil.base.select{|z| z[:x] > -6 and z[:x] < 1500 }
         end
 
         # the current stencil is valid until next_eod
 
         def valid_until
-          @until ||= @readcache.next_eod
+          @until ||= readcache.next_eod
         end
-
-        alias_method :next_eop, :valid_until
 
         def expired?
-          valid_until < @timezone.now
+          valid_until < timezone.now
         end
 
-        def modified_at;                   @datetime; end
+        def modified_at;                   datetime; end
 
-        def next_eow
-          eod = @readcache.next_eod
-          now = @timezone.now
-          unless @next_eow
-            i = 0
-            i+= 1 while @stencil.index(i+1)[:datetime] < now.next_week.beginning_of_week
-            @next_eow = @stencil.index(i)[:datetime] + eod.hour.hours  + eod.min.minutes
-          else
-            @next_eow
-          end
+        def index(i=0)
+          stencil.index(i)
         end
+
+        private
+        attr_reader :datetime, :readcache, :timezone, :date, :stencil, :interval, :swap_type
 
       end
     end
