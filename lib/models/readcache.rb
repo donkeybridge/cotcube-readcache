@@ -31,7 +31,7 @@ module Cotcube
       istencil:  { name: 'istencil',  maxage: 30.minutes, until: :intra, selector: 2, init: lambda{|z| { asset: z, interval: 30.minutes } }  },
 
       # for each contract, intra holds intraday bars on the given interval, defaulting to 30.minutes (other are untested)
-      intra:     { name: 'intra',     maxage: 30.minutes, until: :intra, selector: 5 },
+      intra:     { name: 'intra',     maxage: 30.minutes, until: :intra, selector: 5, init: lambda{|z| { contract: z } } },
 
       # for each contract, these are swaps found on intraday runs based on #interval bars
       iswaps:    { name: 'iswaps',    maxage: 30.minutes, until: :intra, selector: 5 },
@@ -76,7 +76,7 @@ module Cotcube
       if entity == :istencil
         orig_selector = selector
         selector = Object.const_get(klass).set_selected(orig_selector)
-        return { error: 1, msg: "ArgumentError: unknown selector '#{selector}' for entity '#{entity}'." } if selector == :error
+        return { error: 1, msg: "ArgumentError: unknown selector '#{orig_selector}' for entity '#{entity}'." } if selector == :error
         cache_key = "#{entity.to_s}_#{selector.to_s}"
       end
       if cache[cache_key].nil?
@@ -105,6 +105,11 @@ module Cotcube
       }
     end
 
+    def next_eop(contract)
+      seg = Cotcube::ReadCache::Helpers::ISTENCIL.set_selected(contract)
+      deliver( :istencil, selector: contract[..1]) if cache["istencil_#{seg}"].nil?
+      cache["istencil_#{seg}"][:obj].next_eop
+    end
     def next_eod; cache['istencil_full'][:obj].next_eod; end
     def next_eow; cache[ 'stencil'     ][:obj].next_eow; end
 

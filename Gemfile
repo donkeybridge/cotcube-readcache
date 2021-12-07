@@ -2,6 +2,7 @@ source "https://rubygems.org"
 
 # Specify your gem's dependencies in bitangent.gemspec
 #gemspec
+gem 'bunny'
 gem 'cotcube-helpers'
 gem 'cotcube-level'
 gem 'cotcube-bardata'
