@@ -70,7 +70,7 @@ module Cotcube
             loop do 
               cur = istencil.index(i  )[:datetime] + interval
               nxt = istencil.index(i+1)[:datetime] + interval
-              break if (cur.day != nxt.day && (nxt - cur) * 1.day > 30.minutes) 
+              break if (cur.day != nxt.day && (nxt - cur) * 1.day > interval)
               break if (cur.hour <= 16 and nxt.hour >= 17)
               i += 1
             end 

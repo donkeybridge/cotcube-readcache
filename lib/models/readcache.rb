@@ -63,7 +63,7 @@ module Cotcube
       entity = entity.to_s.downcase.to_sym
 
       return { error: 1, msg: "ArgumentError: unknown entity, must be in #{VALID_ENTITIES.keys}" }  unless VALID_ENTITIES.keys.include? entity
-      
+
       if VALID_ENTITIES[entity][:selector].zero? and selector
         warnings << "ArgumentError: '#{entity}' MUST not contain a 'selector' (got '#{selector}'. Ignoring selector."
         selector = nil
@@ -108,13 +108,27 @@ module Cotcube
       }
     end
 
-    def next_eop(contract)
+    def next_eop(contract=:AA); next_end_of(:period, contract); end
+    def next_eod(contract=:AA); next_end_of(:day,    contract); end
+    def next_eow(contract=:AA); next_end_of(:week,   contract); end
+
+    def next_end_of(interval, contract)
+      appropriate_intervals = %i[ day interval period week month quarter year ]
+      raise ArgumentError, "inappropriate interval #{interval}, please choose from #{appropriate_intervals}." unless appropriate_intervals.include? interval
+
       seg = Cotcube::ReadCache::Helpers::ISTENCIL.set_selected(contract)
       deliver( :istencil, selector: contract[..1]) if cache["istencil_#{seg}"].nil?
-      cache["istencil_#{seg}"][:obj].next_eop
+
+      cache["istencil_#{seg}"][:obj].send(
+                                           case interval
+                                           when :day;               :next_eod
+                                           when :interval, :period; :next_eop
+                                           when :week;              :next_eow
+                                           else;                    raise "#{interval} not yet implemented"
+                                           end
+                                         )
     end
-    def next_eod; cache['istencil_full'][:obj].next_eod; end
-    def next_eow; cache[ 'stencil'     ][:obj].next_eow; end
+
 
     private
 
