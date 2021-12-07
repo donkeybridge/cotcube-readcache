@@ -15,28 +15,31 @@ module Cotcube
         end
 
         def update
-          @keys      = @readcache.cache.keys
+          @keys      = readcache.cache.keys
           @classes   = Cotcube::ReadCache::Helpers.constants.select {|c| Cotcube::ReadCache::Helpers.const_get(c).is_a? Class}
-          @datetime  = @timezone.now
-          @until     = @datetime + 20.seconds
+          @datetime  = timezone.now
+          @until     = nil
         end
 
         def payload
-          { keys: @keys, classes: @classes, missing: Cotcube::ReadCache::VALID_ENTITIES.keys.map{|z| z.to_s.upcase.to_sym } - @classes }
+          { classes: classes, missing: Cotcube::ReadCache::VALID_ENTITIES.keys.map{|z| z.to_s.upcase.to_sym } - classes, keys: keys }
         end
 
         def valid_until
           # give a short validity, for testing purposes
-          @until ||= @datetime + 20.seconds
+          @until ||= datetime + 20.seconds
         end
 
         def modified_at
-          @datetime
+          datetime
         end
 
         def expired?
-          valid_until < @timezone.now
+          valid_until < timezone.now
         end
+
+        private
+        attr_reader :keys, :classes, :timezone, :datetime, :readcache
 
       end
     end

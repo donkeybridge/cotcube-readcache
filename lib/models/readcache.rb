@@ -8,6 +8,9 @@ module Cotcube
       # symbols are a list of supported symbols within the application, consisting of the main future assets as well as corresponding micro futures
       symbols:   { name: 'symbols',   maxage: 1.week,     until: :eow,   selector: 0 },
 
+      #
+      eods:      { name: 'eods',      maxage: 1.day,      until: :eod,   selector: 0 },
+
       # the cotdata is specific for each asset (based on the main future), and contains signal information
       cotdata:   { name: 'cotdata',   maxage: 1.week,     until: :eow,   selector: 2 },
 
