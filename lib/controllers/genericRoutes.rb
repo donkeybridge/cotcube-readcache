@@ -8,12 +8,14 @@ module Sinatra
 
       app.get '/:entity' do
         puts "Got params #{params}"
-        $cache.deliver(params['entity']).to_json
+        force_update = params.keys.include? %w[update force]
+        $cache.deliver(params['entity'], force_update: force_update).to_json
       end
 
       app.get '/:entity/:selector' do
         puts "Got params #{params}"
-        $cache.deliver(params['entity'], selector: params['selector']).to_json
+        force_update = params.keys.include? %w[update force]
+        $cache.deliver(params['entity'], selector: params['selector'], force_update: force_update).to_json
       end
 
     end

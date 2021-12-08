@@ -11,6 +11,9 @@ module Cotcube
       #
       eods:      { name: 'eods',      maxage: 1.day,      until: :eod,   selector: 0 },
 
+      #
+      continuous: { name: 'continuous', maxage: 1.day,    until: :eod,   selector: 2, init: lambda{|z| { asset: z} } }, 
+
       # the cotdata is specific for each asset (based on the main future), and contains signal information
       cotdata:   { name: 'cotdata',   maxage: 1.week,     until: :eow,   selector: 2 },
 
@@ -55,7 +58,7 @@ module Cotcube
       deliver :stencil
     end
 
-    def deliver(entity, selector: nil)
+    def deliver(entity, selector: nil, force_update: false)
       warnings = [] 
       # a bunch of validators
       return { error: 1, msg: "ArgumentError: entity must be a string or Symbol"   } unless %w[ String Symbol          ].include? entity.class.to_s
@@ -93,9 +96,9 @@ module Cotcube
           return { error: 2, msg: "RuntimeError: '#{klass}' does not implement #{lacking_methods}." } unless lacking_methods.empty?
           cache[cache_key] = { obj: obj, monitor: Monitor.new, modified: Cotcube::Helpers::CHICAGO.now }
         end
-      elsif cache[cache_key][:obj].expired?
+      elsif force_update || cache[cache_key][:obj].expired?
         cache[cache_key][:monitor].synchronize do
-          cache[cache_key][:obj].update if cache[cache_key][:obj].expired?
+          cache[cache_key][:obj].update if force_update || cache[cache_key][:obj].expired?
         end
       end
       # TODO: Set http cache-control according to :valid_until
